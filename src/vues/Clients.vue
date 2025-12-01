@@ -161,17 +161,25 @@ export default {
       this.chargerClients();
     },
     async supprimerClient(codecli) {
-      if (confirm("Supprimer ce client ?")) {
-        await fetch("http://localhost/Stage1/backend/api/clients.php", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `codecli=${codecli}`,
-        });
-        this.chargerClients();
-      }
+      if(!confirm("Supprimer ce client ?")) return;
+
+const res = await fetch("http://localhost/Stage1/backend/api/clients.php",{
+    method:'DELETE',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`codecli=${encodeURIComponent(codecli)}`
+});
+
+let data = {};
+try { data = await res.json(); } catch {}
+
+alert(data.message || "Réponse inattendue.");
+
+if(res.ok && data.success){
+  this.chargerClients();          
+}
+}
     },
-  },
-};
+  };
 </script>
 
 <style scoped>

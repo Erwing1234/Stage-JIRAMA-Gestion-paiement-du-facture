@@ -170,18 +170,25 @@ export default {
       this.chargerCompteurs();
     },
     async supprimerCompteur(codecmp) {
-      if (confirm("Supprimer ce compteur ?")) {
-        await fetch("http://localhost/Stage1/backend/api/compteurs.php", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `codecmp=${codecmp}`
-        });
-       
-        this.chargerCompteurs();
-      }
+      if (!confirm("Supprimer ce compteur ?")) return;
+
+  const res = await fetch("http://localhost/Stage1/backend/api/compteurs.php", {
+    method : "DELETE",
+    headers: { "Content-Type":"application/x-www-form-urlencoded" },
+    body   : `codecmp=${encodeURIComponent(codecmp)}`
+  });
+
+  let data = {};
+  try { data = await res.json(); } catch {}
+
+  alert(data.message || "Réponse inattendue.");
+
+  if (res.ok && data.success) {
+    this.chargerCompteurs();   // recharge la liste uniquement si la suppression a réussi
+  }
+}
     }
-  },
-};
+  };
 </script>
 
 <style scoped>

@@ -201,7 +201,7 @@ export default {
       });
       // update local sans reload
       this.paiements = this.paiements.filter(p => p.id_pay !== id_pay);
-      this.snackbar = { visible:true, text:"Paiement supprimé", color:"success" };
+      this.snackbar = { visible:true, text:"Paiement supprimé", color:"" };
     }
   }
 };

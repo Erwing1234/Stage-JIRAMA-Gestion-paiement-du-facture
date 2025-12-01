@@ -144,11 +144,17 @@ export default {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(this.formData)
       });
-      const result = await res.json();
-      alert(result.message || result.error);
-      this.formVisible = false;
-      this.chargerReleves();
-    },
+      let result = {};
+  try { result = await res.json(); } catch {}
+
+  alert(result.message || result.error || "Réponse inattendue.");
+
+  /* on referme la modale et on rafraîchit la liste UNIQUEMENT si l’opération a réellement réussi */
+  if (res.ok && result.success) {
+    this.formVisible = false;
+    this.chargerReleves();
+  }
+},
     async supprimerReleve(id) {
       if (!confirm("Supprimer ce relevé ?")) return;
       await fetch("http://localhost/Stage1/backend/api/releves.php", {

@@ -60,17 +60,40 @@ switch ($method) {
         echo json_encode(["success" => true, "message" => " Compteur modifié avec succès."]);
         break;
 
-    case 'DELETE':
-        parse_str(file_get_contents("php://input"), $data);
+    /* DELETE : RG15 – empêcher la suppression si relevés présents*/
+case 'DELETE':
+    parse_str(file_get_contents("php://input"), $d);
 
-        if (!isset($data['codecmp'])) {
-            echo json_encode(["success" => false, "message" => "Code compteur requis pour suppression."]);
-            exit;
-        }
+    if (empty($d['codecmp'])) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'codecmp requis pour suppression.'
+        ]);
+        exit;
+    }
 
-        $stmt = $pdo->prepare("DELETE FROM compteur WHERE codecmp = ?");
-        $stmt->execute([$data['codecmp']]);
+    /* existe-t-il au moins un relevé lié à ce compteur ? */
+    $q = $pdo->prepare("SELECT EXISTS(SELECT 1 FROM releve WHERE codecmp = ? LIMIT 1)");
+    $q->execute([$d['codecmp']]);
+    $hasReleve = (int) $q->fetchColumn();   // 1 = oui, 0 = non
 
-        echo json_encode(["success" => true, "message" => " Compteur supprimé avec succès."]);
-        break;
+    if ($hasReleve) {
+        http_response_code(409);            
+        echo json_encode([
+            'success' => false,
+            'message' =>
+              'Suppression impossible : des relevés sont encore associés à ce compteur.'
+        ]);
+        exit;
+    }
+
+    /* AUCUN relevé ⇒ on autorise la suppression */
+    $pdo->prepare("DELETE FROM compteur WHERE codecmp = ?")->execute([$d['codecmp']]);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Compteur supprimé avec succès.'
+    ]);
+    break;
 }

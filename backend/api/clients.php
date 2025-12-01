@@ -64,18 +64,35 @@ switch ($method) {
         echo json_encode(["success" => true, "message" => "Client modifié avec succès."]);
         break;
 
-    case 'DELETE':
-        //  Supprimer un client
-        parse_str(file_get_contents("php://input"), $data);
-
-        if (!isset($data['codecli'])) {
-            echo json_encode(["success" => false, "message" => "Code client requis pour suppression."]);
-            exit;
-        }
-
-        $stmt = $pdo->prepare("DELETE FROM client WHERE codecli = ?");
-        $stmt->execute([$data['codecli']]);
-
-        echo json_encode(["success" => true, "message" => "Client supprimé avec succès."]);
-        break;
+        case 'DELETE':
+            parse_str(file_get_contents("php://input"), $d);
+        
+            if (empty($d['codecli'])) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'codecli requis pour suppression.'
+                ]);
+                exit;
+            }
+        
+            /* vérifier s’il existe AU MOINS un compteur lié */
+            $sql = "SELECT EXISTS(SELECT 1 FROM compteur WHERE codecli = ? LIMIT 1)";
+            $q   = $pdo->prepare($sql);
+            $q->execute([$d['codecli']]);
+            $hasCmp = (int)$q->fetchColumn();   // 0 = aucun, 1 = au moins un
+        
+            if ($hasCmp) {
+                http_response_code(409);        
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Suppression impossible : des compteurs sont encore associés à ce client.'
+                ]);
+                exit;
+            }
+        
+            /* aucune contrainte → on supprime */
+            $pdo->prepare("DELETE FROM client WHERE codecli = ?")->execute([$d['codecli']]);
+            echo json_encode(['success' => true, 'message' => 'Client supprimé avec succès.']);
+            break;
 }

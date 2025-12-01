@@ -26,20 +26,46 @@ switch ($method) {
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
-    case 'POST':
-        $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $pdo->prepare("
-            INSERT INTO releve (codecmp, valeur, date_releve, date_limite) 
-            VALUES (?, ?, ?, ?)
-        ");
-        $stmt->execute([
-            $data['codecmp'],
-            $data['valeur'],
-            $data['date_releve'],
-            $data['date_limite']
-        ]);
-        echo json_encode(["message" => " Relevé ajouté."]);
-        break;
+        case 'POST':
+            $d = json_decode(file_get_contents("php://input"), true);
+        
+            if (empty($d['codecmp']) || !isset($d['valeur'])) {
+                http_response_code(400);
+                echo json_encode([
+                    'success'=>false,
+                    'message'=>'codecmp et valeur sont requis.'
+                ]);
+                exit;
+            }
+        
+            /* RG16 : vérifier le statut du compteur */
+            $q = $pdo->prepare("SELECT status FROM compteur WHERE codecmp=?");
+            $q->execute([$d['codecmp']]);
+            $status = $q->fetchColumn();
+        
+            if ($status !== 'actif') {
+                http_response_code(409);                   // 409 Conflict
+                echo json_encode([
+                    'success'=>false,
+                    'message'=>'Impossible d’enregistrer un relevé : ce compteur est inactif.'
+                ]);
+                exit;
+            }
+        
+            /* Insérer le relevé (compteur actif) */
+            $ins = $pdo->prepare("
+                INSERT INTO releve(codecmp,valeur,date_releve,date_limite)
+                VALUES(?,?,?,?)");
+            $ins->execute([
+                $d['codecmp'],
+                $d['valeur'],
+                $d['date_releve'] ?? date('Y-m-d'),
+                $d['date_limite'] ?? date('Y-m-d',strtotime('+30 days'))
+            ]);
+        
+            http_response_code(201);
+            echo json_encode(['success'=>true,'message'=>'Relevé enregistré.']);
+            break;
 
     case 'PUT':
         $data = json_decode(file_get_contents("php://input"), true);

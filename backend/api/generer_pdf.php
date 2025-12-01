@@ -86,14 +86,16 @@ $row     = [$service,$quant,$montant,$montant];
 foreach($row as $i=>$txt) $pdf->Cell($w[$i],7,t($txt),1,0,'C');
 $pdf->Ln(12);
 
-/* ---------- Encadré total TTC ---------- */
+/* Encadré total TTC  */
 $pdf->SetFont('Arial','B',12);
 $pdf->Cell(130);
 $pdf->Cell(40,10,t('Prix total à régler :'),1,0,'R');
 $pdf->Cell(30,10,$montant,1,1,'R');
 
+
+
 /*  Pied  */
-$pdf->SetY(-15);
+$pdf->SetY(-175);
 $pdf->SetFont('Arial','I',8);
 $pdf->Cell(0,0,t('Merci de votre confiance - JIRAMA'),0,0,'C');
 

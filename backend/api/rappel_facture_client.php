@@ -14,7 +14,7 @@ require __DIR__ . '/../lib/PHPMailer-master/src/SMTP.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// Récupérer les données envoyées depuis le frontend (JSON)
+// Récupérer les données envoyées depuis le frontend 
 $input = json_decode(file_get_contents("php://input"), true);
 
 if (!$input || !isset($input["email"]) || !isset($input["nom"]) || !isset($input["montant"])) {
@@ -33,8 +33,8 @@ try {
     $mail->isSMTP();
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
-    $mail->Username = 'erwinrazanakolona8@gmail.com'; //  Mets ton adresse Gmail
-    $mail->Password = 'esgibwhvgjizymco';    //  Ton mot de passe d'application SANS espace
+    $mail->Username = 'razanakolonaelvinah@gmail.com'; //  Mets ton adresse Gmail
+    $mail->Password = 'yyrylepmkrtmbvhy';    //  Ton mot de passe d'application SANS espace
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
 
