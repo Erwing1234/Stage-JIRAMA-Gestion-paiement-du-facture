@@ -230,72 +230,66 @@ export default {
       window.open(`http://localhost/Stage1/backend/api/generer_pdf.php?id_fact=${facture.id_fact}`, '_blank');
     },
 
-    // méthode modale impayés
-    afficherClientsImpayes() {
-      const impayes = this.factures.filter(f => f.statut === "impayé");
+    
+afficherClientsImpayes() {
+  const impayes = this.factures.filter(f => f.statut === "impayé");
 
-      const grouped = {};
-      for (let f of impayes) {
-        const client = this.clients.find(c => c.codecli === f.codecli);
-        if (!client) continue;
+  const grouped = {};
+  for (const f of impayes) {
+    const cli = this.clients.find(c => c.codecli === f.codecli);
+    if (!cli) continue;
 
-        if (!grouped[f.codecli]) {
-          grouped[f.codecli] = {
-            nom: client.nom,
-            codecli  : client.codecli,
-            quartier: client.quartier,
-            téléphone: client.téléphone,
-            email: client.email,
-            montant: 0
-          };
-        }
-        grouped[f.codecli].montant += parseFloat(f.total_ttc);
-      }
+    if (!grouped[f.codecli]) {
+      grouped[f.codecli] = {
+        nom        : cli.nom,
+        codecli    : cli.codecli,
+        quartier   : cli.quartier,
+        téléphone  : cli.téléphone,
+        email      : cli.email,
+        montant    : 0,
+        id_fact    : f.id_fact          // on stocke un id_fact
+      };
+    }
+    grouped[f.codecli].montant += parseFloat(f.total_ttc);
 
-      this.clientsImpayes = Object.values(grouped);
-      this.dialogImpayes = true;
-    },
-
-    async envoyerRappelClient(client) {
-  if (!client.email) { 
-    alert("Aucune adresse e-mail"); 
-    return; 
+    /* on garde l’id_fact le plus récent */
+    if (f.id_fact > grouped[f.codecli].id_fact) {
+      grouped[f.codecli].id_fact = f.id_fact;
+    }
   }
 
+  this.clientsImpayes = Object.values(grouped);
+  this.dialogImpayes  = true;
+},
+
+async envoyerRappelClient(client) {
+  if (!client.email) { alert("Aucune adresse e-mail"); return; }
   if (!confirm(`Envoyer un rappel à ${client.nom} (${client.email}) ?`)) return;
 
   try {
-    const response = await fetch("http://localhost/Stage1/backend/api/rappel_facture_client.php", {
-      method: "POST",
+    const res = await fetch("http://localhost/Stage1/backend/api/rappel_facture_client.php", {
+      method : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: client.email,
-        nom: client.nom,
-        montant: client.montant
+      body   : JSON.stringify({
+        id_fact : client.id_fact,   
+        email   : client.email,
+        nom     : client.nom,
+        montant : client.montant
       })
     });
 
-    // 🔹 Lire le body UNE SEULE FOIS
-    const text = await response.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      throw new Error("Réponse invalide du serveur : " + text);
-    }
+    const data = await res.json();   
 
-    // 🔹 Vérifier le succès
-    if (response.ok && data.success) {
-      alert(` ${data.message}`);
+    if (res.ok && data.success) {
+      alert(data.message);
     } else {
-      alert(` ${data.error || "Erreur inconnue"}`);
+      alert(data.message || data.error || "Erreur inconnue");
     }
-  } catch (error) {
-    console.error("Erreur lors de l'envoi du rappel:", error);
-    alert(` Erreur: ${error.message}`);
+  } catch (err) {
+    console.error("Erreur lors de l'envoi du rappel :", err);
+    alert("Erreur : " + err.message);
   }
 }
-
    /* async envoyerRappelClient(client) {
   if (!client.email) {
     alert("Adresse e-mail manquante pour ce client"); return;
